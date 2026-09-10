@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT Diksiyon & Zorlu Tekerleme Karaoke Arena</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            accent: '#f43f5e',
+                            gold: '#fbbf24'
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 0.6s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'glow': 'glow 2s infinite alternate',
+                    },
+                    keyframes: {
+                        glow: {
+                            '0%': { boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)' },
+                            '100%': { boxShadow: '0 0 35px rgba(244, 63, 94, 0.8)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Glowing Colorful Background Spheres */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.55;
+            z-index: 0;
+            pointer-events: none;
+            animation: floatOrb 18s ease-in-out infinite alternate;
+        }
+
+        .bg-orb-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, #f43f5e 0%, #a855f7 70%, transparent 100%);
+            animation-duration: 22s;
+        }
+
+        .bg-orb-2 {
+            bottom: -15%;
+            right: -10%;
+            width: 55vw;
+            height: 55vw;
+            background: radial-gradient(circle, #06b6d4 0%, #3b82f6 60%, transparent 100%);
+            animation-duration: 25s;
+        }
+
+        .bg-orb-3 {
+            top: 40%;
+            left: 30%;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, #f59e0b 0%, #ec4899 70%, transparent 100%);
+            opacity: 0.35;
+            animation-duration: 18s;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            50% { transform: translate(60px, 40px) scale(1.15) rotate(180deg); }
+            100% { transform: translate(-40px, 80px) scale(0.9) rotate(360deg); }
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .neon-border {
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.3);
+        }
+
+        .karaoke-word {
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: inline-block;
+            padding: 4px 10px;
+            margin: 3px;
+            border-radius: 10px;
+        }
+
+        .word-pending {
+            color: #cbd5e1;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .word-active {
+            color: #fef08a;
+            background: rgba(250, 204, 21, 0.25);
+            transform: scale(1.15);
+            font-weight: 800;
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+        }
+
+        .word-matched {
+            color: #4ade80;
+            background: rgba(34, 197, 94, 0.25);
+            font-weight: 800;
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+            transform: scale(1.05);
+        }
+
+        .number-box {
+            background: radial-gradient(circle at 30% 30%, #311b92 0%, #0d0a21 100%);
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.6), inset 0 0 20px rgba(244, 63, 94, 0.4);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.9), 0 0 10px rgba(236, 72, 153, 0.8);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f43f5e;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased selection:bg-rose-500 selection:text-white flex flex-col min-h-screen relative">
+
+    <!-- Background Colorful Animated Glowing Orbs -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <header class="border-b border-white/15 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-40 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-600 to-amber-400 flex items-center justify-center shadow-lg shadow-pink-500/40 animate-pulse">
+                    <i class="fa-solid font-display text-2xl text-white fa-microphone-lines"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-display text-xl sm:text-2xl font-black bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm">
+                            MT Diksiyon Arena
+                        </h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-rose-500 to-pink-600 text-white border border-rose-300/40 shadow-md shadow-rose-500/30">ZORLU EDİSYON</span>
+                    </div>
+                    <p class="text-xs text-cyan-200/80 font-medium">Müşteri Temsilcileri İçin Ağır Diksiyon & Karaoke Eğitim Platformu</p>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-3">
+                <button id="btn-all-twisters" class="px-4 py-2.5 rounded-xl glass-card hover:bg-white/15 text-white text-sm font-semibold transition border border-white/20 flex items-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-list-ol text-cyan-300"></i>
+                    <span class="hidden sm:inline">20 Zorlu Tekerleme</span>
+                </button>
+                <button id="btn-leaderboard" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 hover:from-amber-500 hover:to-rose-600 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/30 transition flex items-center gap-2 transform active:scale-95">
+                    <i class="fa-solid fa-trophy text-slate-950"></i>
+                    <span class="hidden sm:inline">Liderlik Tablosu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 relative z-10">
+
+        <!-- SECTION 1: SPINNER & SELECTED TWISTER PREVIEW -->
+        <section class="glass-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl neon-border">
+            <div class="absolute -right-16 -top-16 w-80 h-80 bg-rose-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <!-- Digital Counter Display -->
+                <div class="lg:col-span-5 flex flex-col items-center justify-center text-center">
+                    <div class="relative group">
+                        <div id="number-glow" class="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 opacity-80 blur-md transition duration-500 group-hover:opacity-100 animate-pulse"></div>
+                        
+                        <div class="relative w-48 h-48 sm:w-56 sm:h-56 rounded-3xl number-box border-2 border-pink-400/50 flex flex-col items-center justify-center shadow-2xl">
+                            <span class="text-xs uppercase tracking-widest text-cyan-300 font-bold mb-1">Tekerleme Numarası</span>
+                            <span id="display-number" class="font-display text-7xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-pink-200 to-purple-300 tracking-wider">
+                                01
+                            </span>
+                            <span id="spin-status-badge" class="mt-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-950/90 text-pink-300 border border-pink-500/40 shadow-inner">
+                                Hazır
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Spin Controls -->
+                    <div class="mt-6 flex gap-3 w-full max-w-xs justify-center">
+                        <button id="btn-spin-start" class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-600 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/40 active:scale-95 transition flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <i class="fa-solid fa-play"></i> RASTGELE SEÇ
+                        </button>
+                        <button id="btn-spin-stop" disabled class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-black text-base shadow-lg shadow-rose-500/40 active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <i class="fa-solid fa-hand"></i> DUR!
+                        </button>
+                    </div>
+
+                    <!-- Number Grid Selector -->
+                    <div class="mt-5 flex flex-wrap justify-center gap-1.5 max-w-xs">
+                        <div id="number-badge-grid" class="flex flex-wrap justify-center gap-1.5"></div>
+                    </div>
+                </div>
+
+                <!-- Selected Twister Preview & Information -->
+                <div class="lg:col-span-7 flex flex-col justify-center gap-5 border-t lg:border-t-0 lg:border-l border-white/15 pt-6 lg:pt-0 lg:pl-8">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span id="badge-difficulty" class="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-rose-500/30 to-pink-500/30 text-rose-200 border border-rose-400/40 shadow-md">
+                                ZORLU SEVİYE
+                            </span>
+                            <span id="badge-sound-focus" class="px-3.5 py-1 rounded-full text-xs font-black bg-gradient-to-r from-indigo-500/30 to-purple-500/30 text-cyan-200 border border-indigo-400/40 shadow-md">
+                                Odak: Ç, Ş, S, T
+                            </span>
+                        </div>
+                        <span class="text-xs text-slate-300 font-semibold bg-slate-900/60 px-3 py-1 rounded-full border border-white/10"><i class="fa-regular fa-clock mr-1.5 text-amber-400"></i> Hedef Süre: <span id="target-time-text" class="font-bold text-amber-300">10 sn</span></span>
+                    </div>
+
+                    <h2 id="twister-title" class="font-display text-2xl sm:text-4xl font-black text-white leading-tight bg-gradient-to-r from-white via-pink-100 to-purple-200 bg-clip-text text-transparent">
+                        Çatalağzı Çatanası
+                    </h2>
+
+                    <p id="twister-description" class="text-white text-lg font-medium leading-relaxed bg-slate-950/60 p-5 rounded-2xl border border-pink-500/20 italic shadow-inner">
+                        "Çatalağzı'nda çatalsız çatalca çatalcalı çatananın çatalca çatanasından çatalca..."
+                    </p>
+
+                    <!-- Tip Box -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-r from-purple-900/40 to-slate-900/60 border border-purple-400/30 flex items-start gap-3 shadow-md">
+                        <i class="fa-solid fa-lightbulb text-amber-300 text-xl mt-0.5 animate-bounce-slow"></i>
+                        <p class="text-xs text-slate-200 leading-relaxed" id="twister-tip">
+                            <strong>Eğitmen İpucu:</strong> Çene kaslarınızı serbest bırakın. Ç ve T seslerindeki sert patlamaları yuvarlamadan ritmik söyleyin.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: LIVE KARAOKE & SPEECH RECOGNITION -->
+        <section id="karaoke-section" class="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-6 relative shadow-2xl border border-cyan-500/30">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/15 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-600 border border-rose-300/40 flex items-center justify-center text-white shadow-lg shadow-rose-500/40">
+                        <i class="fa-solid fa-microphone text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-xl font-bold text-white">Canlı Karaoke & Diksiyon Takibi</h3>
+                        <p class="text-xs text-cyan-200/80">Mikrofonu açın ve tekerlemeyi yüksek sesle, kelimeleri yutmadan okuyun</p>
+                    </div>
+                </div>
+
+                <!-- Live Metrics Display -->
+                <div class="flex items-center gap-4 bg-slate-950/80 px-5 py-2.5 rounded-2xl border border-pink-500/30 shadow-inner">
+                    <div class="text-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-pink-300 block">Süre</span>
+                        <span id="live-timer" class="font-mono text-2xl font-black text-cyan-300">00:00</span>
+                    </div>
+                    <div class="h-8 w-px bg-white/20"></div>
+                    <div class="text-center">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-pink-300 block">Eşleşme</span>
+                        <span id="live-accuracy" class="font-mono text-2xl font-black text-emerald-400">%0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Text Karaoke Box -->
+            <div class="bg-slate-950/85 rounded-2xl p-6 sm:p-8 border-2 border-purple-500/40 min-h-[170px] flex items-center justify-center text-center shadow-2xl relative overflow-hidden">
+                <div id="karaoke-target-text" class="text-2xl sm:text-3xl font-display font-semibold leading-relaxed tracking-wide z-10">
+                    <!-- Words generated dynamically here -->
+                </div>
+            </div>
+
+            <!-- Speech Output Stream -->
+            <div class="bg-slate-900/70 rounded-2xl p-4 border border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-pink-300 uppercase tracking-wider flex items-center gap-2">
+                        <span id="recording-pulse" class="w-3 h-3 rounded-full bg-rose-500 hidden animate-ping"></span>
+                        Mikrofon Algılama Metni:
+                    </span>
+                    <span id="speech-status-text" class="text-xs text-slate-400 font-semibold">Mikrofon kapalı</span>
+                </div>
+                <div id="karaoke-transcription" class="min-h-[50px] font-mono text-sm text-cyan-100 italic bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+                    Konuşmaya başladığınızda söyledikleriniz canlı olarak burada belirecektir...
+                </div>
+            </div>
+
+            <!-- Karaoke Action Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-2">
+                <div class="flex items-center gap-3">
+                    <button id="btn-mic-toggle" class="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-600 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-pink-500/40 transition active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-microphone-lines text-lg"></i>
+                        <span id="btn-mic-text">Mikrofonu Aç & Oku</span>
+                    </button>
+                    <button id="btn-reset-performance" class="px-4 py-3.5 rounded-2xl glass-card hover:bg-white/15 text-slate-200 transition font-bold text-sm flex items-center gap-2 shadow-md">
+                        <i class="fa-solid fa-rotate-left text-cyan-300"></i> Yeniden Dene
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="btn-finish-test" disabled class="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-600 text-slate-950 font-black text-sm uppercase tracking-wider transition disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/30 flex items-center gap-2">
+                        <i class="fa-solid fa-check-circle text-lg"></i> Performansı Tamamla
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: TRAINER EVALUATION & RESULTS -->
+        <section id="results-card" class="hidden glass-panel rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-slate-900/95 via-purple-950/90 to-slate-950/95 border-2 border-amber-400/50 shadow-2xl relative overflow-hidden">
+            <div class="max-w-3xl mx-auto flex flex-col items-center gap-6">
+                
+                <div class="text-center flex flex-col items-center gap-2">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white flex items-center justify-center text-slate-950 text-4xl shadow-xl shadow-amber-400/40 animate-bounce">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <h3 class="font-display text-3xl sm:text-4xl font-black bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Performans & Diksiyon Karnesi</h3>
+                    <p class="text-sm text-cyan-200 font-medium">Müşteri Temsilcisi Konuşma Kalitesi Değerlendirmesi</p>
+                </div>
+
+                <!-- Stars -->
+                <div id="result-stars" class="flex gap-2 text-3xl sm:text-4xl text-amber-300 filter drop-shadow">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-regular fa-star text-slate-600"></i>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+                    <div class="glass-card p-5 rounded-2xl text-center border border-emerald-400/30">
+                        <span class="text-xs text-emerald-300 font-bold block mb-1 uppercase tracking-wider">Metin Eşleşmesi</span>
+                        <span id="res-accuracy" class="font-display text-3xl font-black text-emerald-400">%92</span>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl text-center border border-cyan-400/30">
+                        <span class="text-xs text-cyan-300 font-bold block mb-1 uppercase tracking-wider">Tamamlama Süresi</span>
+                        <span id="res-time" class="font-display text-3xl font-black text-cyan-300">6.4s</span>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl text-center border border-amber-400/30">
+                        <span class="text-xs text-amber-300 font-bold block mb-1 uppercase tracking-wider">Toplam Diksiyon Skoru</span>
+                        <span id="res-score" class="font-display text-3xl font-black text-amber-300">920</span>
+                    </div>
+                </div>
+
+                <!-- Trainer Manual Override Panel -->
+                <div class="w-full bg-slate-950/80 p-5 rounded-2xl border border-purple-500/30 flex flex-col gap-3 shadow-inner">
+                    <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                        <span class="text-xs font-black uppercase tracking-wider text-pink-300 flex items-center gap-2">
+                            <i class="fa-solid fa-user-graduate text-amber-300"></i> Eğitmen Değerlendirme Modu (Nefes, Vurgu, Tonlama)
+                        </span>
+                        <span class="text-[10px] text-slate-400">Eğitmen puanı skoru günceller</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="text-slate-200 block mb-1 font-bold">Artikülasyon & Netlik (1-5 Yıldız):</label>
+                            <select id="trainer-articulation" onchange="recalculateScore()" class="w-full bg-slate-900 border border-purple-500/40 rounded-xl p-2.5 text-white font-semibold focus:outline-none focus:border-pink-500">
+                                <option value="5">5 Star - Kusursuz Telaffuz</option>
+                                <option value="4" selected>4 Star - Çok İyi / Hafif Pürüz</option>
+                                <option value="3">3 Star - Orta / Bazı Kelimelerde Yuvarlama</option>
+                                <option value="2">2 Star - Geliştirilmeli / Tembellik Var</option>
+                                <option value="1">1 Star - Zayıf</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-200 block mb-1 font-bold">Nefes & Tonlama Yönetimi:</label>
+                            <select id="trainer-breath" onchange="recalculateScore()" class="w-full bg-slate-900 border border-purple-500/40 rounded-xl p-2.5 text-white font-semibold focus:outline-none focus:border-pink-500">
+                                <option value="5" selected>5 Star - Doğru Nefes & Akıcı Ritim</option>
+                                <option value="4">4 Star - İdeal Ritim</option>
+                                <option value="3">3 Star - Nefesi Yeterli Kullanamadı</option>
+                                <option value="2">2 Star - Aşırı Hızlı / Kesintili</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Earned Badge Title -->
+                <div id="badge-container" class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600/40 to-pink-600/40 border border-pink-400/50 text-pink-200 text-sm font-bold shadow-lg">
+                    <i class="fa-solid fa-medal text-amber-300 text-xl"></i>
+                    Kazanılan Unvan: <span id="res-badge-title" class="text-white font-black text-base">Dil Bükücü Master</span>
+                </div>
+
+                <!-- Save Trainee Score -->
+                <div class="w-full max-w-md flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="representative-name" placeholder="Müşteri Temsilcisi Ad Soyad" class="flex-1 px-4 py-3.5 rounded-2xl bg-slate-950/90 border border-purple-500/40 text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 font-medium">
+                    <button id="btn-save-score" class="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-slate-950 font-black transition shadow-lg shadow-emerald-500/30 uppercase tracking-wide">
+                        Skoru Kaydet
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: All 20 Tough Twisters Overview -->
+    <div id="modal-twister-list" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-5xl max-h-[88vh] rounded-3xl border border-white/20 flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-white/15 flex items-center justify-between bg-slate-900/80">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-list-check text-cyan-300 text-2xl"></i>
+                    <h3 class="font-display text-xl font-bold text-white">20 Çok Zorlu Tekerleme Havuzu</h3>
+                </div>
+                <button class="btn-close-modal text-slate-400 hover:text-white text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="twister-grid-container" class="p-6 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamically populated 20 twisters -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Leaderboard -->
+    <div id="modal-leaderboard" class="fixed inset-0 bg-slate-950/85 backdrop-blur-xl z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-3xl max-h-[85vh] rounded-3xl border border-white/20 flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-white/15 flex items-center justify-between bg-slate-900/80">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-trophy text-amber-300 text-2xl"></i>
+                    <h3 class="font-display text-xl font-bold text-white">Müşteri Temsilcileri Liderlik Tablosu</h3>
+                </div>
+                <button class="btn-close-modal text-slate-400 hover:text-white text-2xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/15 text-xs text-cyan-300 font-bold uppercase tracking-wider">
+                            <th class="pb-3">Sıra</th>
+                            <th class="pb-3">Müşteri Temsilcisi</th>
+                            <th class="pb-3">Diksiyon Skoru</th>
+                            <th class="pb-3">Doğruluk</th>
+                            <th class="pb-3">Unvan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-rows" class="divide-y divide-white/10 text-sm font-medium">
+                        <!-- Leaderboard content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 bg-slate-950/80 py-4 text-center text-xs text-slate-400 relative z-10">
+        MT Diksiyon & Konuşma Kalitesi Oyunlaştırma Platformu &copy; 2026 - Müşteri İlişkileri Akademi
+    </footer>
+
+    <script>
+        /* ==========================================================================
+           20 ÇOK ZORLU TEKERLEME HAVUZU (MÜŞTERİ TEMSİLCİLERİ AĞIR DİKSİYON EĞİTİMİ)
+           ========================================================================== */
+        const twisterDatabase = [
+            {
+                id: 1,
+                title: "Çatalağzı Çatanası",
+                text: "Çatalağzı'nda çatalsız çatalca çatalcalı çatananın çatalca çatanasından çatalca çatar.",
+                difficulty: "Çok Zor",
+                focus: "Ç, T, L, S",
+                targetTime: 8,
+                tip: "Ç ve T sert ünsüz birleşimlerinde dudak yuvarlamadan çenenizi serbest bırakarak tane tane okuyun."
+            },
+            {
+                id: 2,
+                title: "Kırk Kırkım Kırkımcılar",
+                text: "Kırk kırkım kırkılan kırkımın kırkı da kırkık kırkımcılar kırkar.",
+                difficulty: "Çok Zor",
+                focus: "K, R, I",
+                targetTime: 7,
+                tip: "K gırtlak sesleri ve I dar ünlülerinde kelimeleri hecelemeden akıcı telaffuz edin."
+            },
+            {
+                id: 3,
+                title: "Mermerciler Derneği",
+                text: "Mermerciler mermerciliği mermercilerle mi yoksa mermercisiz mi mermerleştirirler?",
+                difficulty: "Çok Zor",
+                focus: "M, R, C",
+                targetTime: 9,
+                tip: "M ve R seslerinin ardışık tekrarlarında konuşma ritminizi bozmadan kelime sonlarındaki ekleri netleştirin."
+            },
+            {
+                id: 4,
+                title: "Alemci Alemdar",
+                text: "Alemci alemde alemdarlık ederse, alemsizler alemdara alem olurlar.",
+                difficulty: "Çok Zor",
+                focus: "L, M, A, R",
+                targetTime: 8,
+                tip: "L ve M dudak-dil temaslarını netleştirerek tonlama akıcılığını koruyun."
+            },
+            {
+                id: 5,
+                title: "Farfaralı Faruk",
+                text: "Farfaralı Faruk farfara fantezi fenerini farfaracılara fütursuzca sattı.",
+                difficulty: "Çok Zor",
+                focus: "F, R, L",
+                targetTime: 8,
+                tip: "F harfi diş-dudak temasını kuvvetli yapın, mikrofon rüzgar patlamasına dikkat edin."
+            },
+            {
+                id: 6,
+                title: "Özbezön Özelleştirme",
+                text: "Özbezön özbeöz özbeözgün özbeözelleştirilmiş özbeözelleştirilemeyenlerden misiniz?",
+                difficulty: "Aşırı Zor",
+                focus: "Ö, Z, B, Ş",
+                targetTime: 9,
+                tip: "Özbeöz kalıplarındaki 'Ö' ve 'Z' birleşimlerinde kelimeyi parçalamadan tek nefeste söyleyin."
+            },
+            {
+                id: 7,
+                title: "Sarımsaklama Egzersizi",
+                text: "Sarımsaklasak da mı saklasak, sarımsaklamasak da mı saklasak?",
+                difficulty: "Orta-Zor",
+                focus: "S, R, M, K",
+                targetTime: 7,
+                tip: "S ve K harflerinde dili üst damağa bastırmadan çene hareketini esnetin."
+            },
+            {
+                id: 8,
+                title: "Pireli Peynir Perakendeci",
+                text: "Pireli peyniri pervasızca pervasız prestijli perdeden perakende pazarladı.",
+                difficulty: "Çok Zor",
+                focus: "P, R, S, T",
+                targetTime: 8,
+                tip: "P patlama seslerinde nefesinizi tutmayın, kelime vurgularını dengeli tutun."
+            },
+            {
+                id: 9,
+                title: "Güneşlenen Gülüş",
+                text: "Güneşlenen gülün gülümseyen gülümsediği güllerin güler yüzlü gülümsediğini gördüm.",
+                difficulty: "Çok Zor",
+                focus: "G, L, M, Ü",
+                targetTime: 9,
+                tip: "Yumuşak ve gırtlaktan çıkan G-L ünsüz geçişlerinde ses tonunu düşürmeyin."
+            },
+            {
+                id: 10,
+                title: "İbiş ile Memiş Mahkemesi",
+                text: "İbiş ile memiş mahkemeye gitmiş, ibiş memişe memiş ibişe hürmet etmiş.",
+                difficulty: "Çok Zor",
+                focus: "Ş, M, B, İ",
+                targetTime: 8,
+                tip: "Ş ve M seslerinin birbirini izlediği kelimelerde dudak tembelliğini aşın."
+            },
+            {
+                id: 11,
+                title: "Çapakçurlu Çapa",
+                text: "Çapakçurlu çapaklı çapa yaparken çapaklanmış çapa çapa çapaklanmış.",
+                difficulty: "Çok Zor",
+                focus: "Ç, P, K, L",
+                targetTime: 8,
+                tip: "Ç ve P harflerindeki ritmik patlamaları anlaşılır tonlamayla yapın."
+            },
+            {
+                id: 12,
+                title: "Suskun Susuz Sucu",
+                text: "Suskun sucu susuz sucuların susuzluğuna susarak su sundu.",
+                difficulty: "Zor",
+                focus: "S, K, N, U",
+                targetTime: 7,
+                tip: "S harflerindeki ıslıklaşmayı önlemek için dil ucunu alt dişlerin arkasında tutun."
+            },
+            {
+                id: 13,
+                title: "Boz Bıyıklı Boz Eşek",
+                text: "Sizin damda var beş boz bıyıklı beş boz eşek, bizim damda var beş boz bıyıklı beş boz eşek.",
+                difficulty: "Aşırı Zor",
+                focus: "B, Ş, Z, Y",
+                targetTime: 10,
+                tip: "Boz bıyıklı tamlamalarında B ve Z fonemlerini yuvarlamayın."
+            },
+            {
+                id: 14,
+                title: "Kel Kör Kirpi",
+                text: "Bir tarlaya keman ekmişler, iki kürkü yırtık kel kör kirpi dadanmış.",
+                difficulty: "Çok Zor",
+                focus: "K, R, P, T",
+                targetTime: 8,
+                tip: "K ve R ses bloklarında boğumlamayı dil ucu ile sağlayın."
+            },
+            {
+                id: 15,
+                title: "Kartal ve Dal Ritmi",
+                text: "Dal sarkar kartal kalkar, kartal kalkar dal sarkar.",
+                difficulty: "Zor",
+                focus: "D, L, S, K, R",
+                targetTime: 6,
+                tip: "Kartal kalkar - dal sarkar tersyüz ifadelerinde dilinizi karmaşaya kaptırmayın."
+            },
+            {
+                id: 16,
+                title: "Hakkı'nın Hakkı",
+                text: "Hakkı hakkının hakkını yemiş, Hakkı Hakkı'dan hakkını istemiş.",
+                difficulty: "Orta-Zor",
+                focus: "H, K, I",
+                targetTime: 7,
+                tip: "Sert gırtlak K sesini çıkarırken nefesinizi boğazda tıkamayın."
+            },
+            {
+                id: 17,
+                title: "Görselleştirilemeyebilecekler",
+                text: "Siz görselleştirilemeyebileceklerinizdenmişsinizcesine davrananlardan mısınız?",
+                difficulty: "Aşırı Zor",
+                focus: "G, R, S, L, Ş",
+                targetTime: 9,
+                tip: "Türkçe'nin en uzun ek yapılarından biri! Hecelemeden melodiyle söyleyin."
+            },
+            {
+                id: 18,
+                title: "Oğuzelili Oğuz",
+                text: "Oğuzeli'nden Oğuzeli'ne giden Oğuzelili Oğuz'un oğlu Oğuzeli'ne varmış.",
+                difficulty: "Çok Zor",
+                focus: "Ğ, Z, L, O",
+                targetTime: 9,
+                tip: "Yumuşak G (ğ) harfini yutmadan ünlü harf geçişlerini kaydırarak okuyun."
+            },
+            {
+                id: 19,
+                title: "Şemsi Paşa Pasajı (Master)",
+                text: "Şemsi Paşa pasajında sesi büzüşesiceler büzüşmüş de büzüşmüşler.",
+                difficulty: "Aşırı Zor",
+                focus: "Ş, S, P, B, Z",
+                targetTime: 8,
+                tip: "Ş-S bükülmelerinde dudakları ileri uzatıp çekme hareketini ritmik yapın."
+            },
+            {
+                id: 20,
+                title: "Kepekli Ekmekçi",
+                text: "İki ekmek ikisi de kepekli ekmek, ekmekçi ikisini de kepeklendirmeden verdi.",
+                difficulty: "Çok Zor",
+                focus: "K, P, K, L",
+                targetTime: 8,
+                tip: "K-P sert ünsüz tekrarlarında konuşma hızınızı dengeli tutarak telaffuz edin."
+            }
+        ];
+
+        // Global State Variables
+        let currentTwister = twisterDatabase[0];
+        let isSpinning = false;
+        let spinInterval = null;
+        let isRecording = false;
+        let recognition = null;
+        let timerInterval = null;
+        let startTime = 0;
+        let elapsedTime = 0;
+        let liveAccuracyPercent = 0;
+        let leaderboardData = JSON.parse(localStorage.getItem('mt_diksiyon_leaderboard_v2') || '[]');
+
+        // Default leaderboard fallback
+        if (leaderboardData.length === 0) {
+            leaderboardData = [
+                { name: "Canan Yılmaz", score: 980, accuracy: 98, badge: "Dil Bükücü Master" },
+                { name: "Sertan Demir", score: 920, accuracy: 94, badge: "Alevli Telaffuz" },
+                { name: "Elif Kaya", score: 870, accuracy: 89, badge: "Işık Hızı MT" }
+            ];
+            localStorage.setItem('mt_diksiyon_leaderboard_v2', JSON.stringify(leaderboardData));
+        }
+
+        // Web Audio API for interactive sound effects
+        const AudioFX = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playTone(freq, type = 'sine', duration = 0.1) {
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            },
+            playClick() { this.playTone(850, 'sine', 0.04); },
+            playStop() { this.playTone(480, 'triangle', 0.2); },
+            playSuccess() {
+                this.playTone(523.25, 'sine', 0.1);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.1), 90);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.12), 180);
+                setTimeout(() => this.playTone(1046.50, 'sine', 0.25), 270);
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSpeechRecognition();
+            setupEventListeners();
+            renderNumberBadgeGrid();
+            populateAllTwistersGrid();
+            selectTwister(twisterDatabase[0]);
+            renderLeaderboard();
+        });
+
+        /* ==========================================================================
+           SPEECH RECOGNITION (WEB SPEECH API - TURKISH)
+           ========================================================================== */
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'tr-TR';
+
+                recognition.onstart = () => {
+                    isRecording = true;
+                    updateMicUI();
+                    startTimer();
+                };
+
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+
+                    const fullSpeech = (finalTranscript + ' ' + interimTranscript).trim();
+                    document.getElementById('karaoke-transcription').innerText = fullSpeech || 'Konuşuluyor...';
+                    
+                    evaluateSpeechProgress(fullSpeech);
+                };
+
+                recognition.onerror = (event) => {
+                    console.warn("Speech recognition error:", event.error);
+                    document.getElementById('speech-status-text').innerText = "Ses alma hatası veya sessizlik.";
+                };
+
+                recognition.onend = () => {
+                    if (isRecording) {
+                        try { recognition.start(); } catch(e){}
+                    } else {
+                        updateMicUI();
+                        stopTimer();
+                    }
+                };
+            } else {
+                document.getElementById('speech-status-text').innerText = "Tarayıcınız Web Speech API desteklemiyor (Chrome/Edge önerilir).";
+            }
+        }
+
+        function setupEventListeners() {
+            // Spinner buttons
+            document.getElementById('btn-spin-start').addEventListener('click', startSpinning);
+            document.getElementById('btn-spin-stop').addEventListener('click', stopSpinning);
+
+            // Karaoke Mic Controls
+            document.getElementById('btn-mic-toggle').addEventListener('click', toggleRecording);
+            document.getElementById('btn-reset-performance').addEventListener('click', resetPerformance);
+            document.getElementById('btn-finish-test').addEventListener('click', finishPerformance);
+
+            // Modals
+            document.getElementById('btn-all-twisters').addEventListener('click', () => {
+                document.getElementById('modal-twister-list').classList.remove('hidden');
+            });
+            document.getElementById('btn-leaderboard').addEventListener('click', () => {
+                document.getElementById('modal-leaderboard').classList.remove('hidden');
+            });
+
+            document.querySelectorAll('.btn-close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('modal-twister-list').classList.add('hidden');
+                    document.getElementById('modal-leaderboard').classList.add('hidden');
+                });
+            });
+
+            // Save Score Button
+            document.getElementById('btn-save-score').addEventListener('click', saveScore);
+        }
+
+        /* ==========================================================================
+           SPINNER / NUMBER SELECTION LOGIC
+           ========================================================================== */
+        function startSpinning() {
+            if (isSpinning) return;
+            isSpinning = true;
+            AudioFX.playClick();
+
+            document.getElementById('btn-spin-start').disabled = true;
+            document.getElementById('btn-spin-stop').disabled = false;
+            document.getElementById('spin-status-badge').innerText = "Dönüyor...";
+            document.getElementById('spin-status-badge').className = "mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-950 text-rose-300 border border-rose-500/30 animate-pulse";
+
+            spinInterval = setInterval(() => {
+                const randomNum = Math.floor(Math.random() * 20) + 1;
+                document.getElementById('display-number').innerText = randomNum < 10 ? '0' + randomNum : randomNum;
+                highlightNumberGridBadge(randomNum);
+                AudioFX.playClick();
+            }, 75);
+        }
+
+        function stopSpinning() {
+            if (!isSpinning) return;
+            clearInterval(spinInterval);
+            isSpinning = false;
+            AudioFX.playStop();
+
+            document.getElementById('btn-spin-start').disabled = false;
+            document.getElementById('btn-spin-stop').disabled = true;
+            document.getElementById('spin-status-badge').innerText = "Seçildi!";
+            document.getElementById('spin-status-badge').className = "mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-500/30";
+
+            const selectedNum = parseInt(document.getElementById('display-number').innerText);
+            const selected = twisterDatabase.find(t => t.id === selectedNum) || twisterDatabase[0];
+            selectTwister(selected);
+        }
+
+        function renderNumberBadgeGrid() {
+            const container = document.getElementById('number-badge-grid');
+            let html = '';
+            for (let i = 1; i <= 20; i++) {
+                html += `<button onclick="manualSelectNumber(${i})" id="nbadge-${i}" class="w-7 h-7 rounded-lg text-xs font-bold transition border border-white/10 bg-slate-900 text-slate-400 hover:bg-indigo-600 hover:text-white">${i}</button>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function highlightNumberGridBadge(num) {
+            for (let i = 1; i <= 20; i++) {
+                const el = document.getElementById(`nbadge-${i}`);
+                if (!el) continue;
+                if (i === num) {
+                    el.className = "w-7 h-7 rounded-lg text-xs font-black transition border border-amber-300 bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 scale-110 shadow-lg shadow-amber-500/50";
+                } else {
+                    el.className = "w-7 h-7 rounded-lg text-xs font-bold transition border border-white/15 bg-slate-900/80 text-slate-300 hover:bg-pink-600 hover:text-white";
+                }
+            }
+        }
+
+        function manualSelectNumber(num) {
+            if (isSpinning) return;
+            highlightNumberGridBadge(num);
+            const selected = twisterDatabase.find(t => t.id === num) || twisterDatabase[0];
+            selectTwister(selected);
+            AudioFX.playClick();
+        }
+
+        function selectTwister(twister) {
+            currentTwister = twister;
+            
+            document.getElementById('display-number').innerText = twister.id < 10 ? '0' + twister.id : twister.id;
+            highlightNumberGridBadge(twister.id);
+            
+            document.getElementById('twister-title').innerText = `#${twister.id} ${twister.title}`;
+            document.getElementById('twister-description').innerText = `"${twister.text}"`;
+            document.getElementById('badge-difficulty').innerText = twister.difficulty;
+            document.getElementById('badge-sound-focus').innerText = "Odak: " + twister.focus;
+            document.getElementById('target-time-text').innerText = twister.targetTime + " sn";
+            document.getElementById('twister-tip').innerHTML = `<strong>Eğitmen İpucu:</strong> ${twister.tip}`;
+
+            resetPerformance();
+            renderKaraokeTargetText();
+        }
+
+        function renderKaraokeTargetText() {
+            const container = document.getElementById('karaoke-target-text');
+            const words = currentTwister.text.split(' ');
+            
+            container.innerHTML = words.map((word, index) => {
+                const cleanWord = sanitizeWord(word);
+                return `<span id="kword-${index}" data-clean="${cleanWord}" class="karaoke-word word-pending">${word}</span>`;
+            }).join(' ');
+        }
+
+        function sanitizeWord(str) {
+            return str.toLowerCase()
+                      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"'’]/g, "")
+                      .replace(/ı/g, "i")
+                      .replace(/ğ/g, "g")
+                      .replace(/ü/g, "u")
+                      .replace(/ş/g, "s")
+                      .replace(/ö/g, "o")
+                      .replace(/ç/g, "c");
+        }
+
+        /* ==========================================================================
+           SPEECH RECOGNITION MATCHING & TIMER
+           ========================================================================== */
+        function toggleRecording() {
+            if (!recognition) {
+                alert("Tarayıcınız ses tanımayı desteklemiyor.");
+                return;
+            }
+
+            if (isRecording) {
+                isRecording = false;
+                recognition.stop();
+            } else {
+                resetPerformance();
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.log("Recognition error:", e);
+                }
+            }
+        }
+
+        function updateMicUI() {
+            const btnText = document.getElementById('btn-mic-text');
+            const btn = document.getElementById('btn-mic-toggle');
+            const statusText = document.getElementById('speech-status-text');
+            const pulse = document.getElementById('recording-pulse');
+
+            if (isRecording) {
+                btnText.innerText = "Kaydı Durdur";
+                btn.className = "px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-600 hover:to-rose-700 text-white font-bold shadow-lg shadow-rose-500/30 transition flex items-center gap-2 animate-pulse";
+                statusText.innerText = "Dinleniyor...";
+                statusText.className = "text-xs text-rose-400 font-semibold";
+                pulse.classList.remove('hidden');
+                document.getElementById('btn-finish-test').disabled = false;
+            } else {
+                btnText.innerText = "Mikrofonu Aç & Oku";
+                btn.className = "px-6 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-bold shadow-lg shadow-rose-500/25 transition flex items-center gap-2";
+                statusText.innerText = "Mikrofon durduruldu";
+                statusText.className = "text-xs text-slate-500";
+                pulse.classList.add('hidden');
+            }
+        }
+
+        function evaluateSpeechProgress(spokenText) {
+            const targetWords = currentTwister.text.split(' ');
+            const spokenTokens = spokenText.split(' ').map(s => sanitizeWord(s));
+            
+            let matchedCount = 0;
+
+            targetWords.forEach((word, idx) => {
+                const el = document.getElementById(`kword-${idx}`);
+                if (!el) return;
+                const cleanTarget = el.getAttribute('data-clean');
+
+                const isMatched = spokenTokens.some(token => {
+                    return token === cleanTarget || (token.length > 3 && cleanTarget.includes(token));
+                });
+
+                if (isMatched) {
+                    el.className = "karaoke-word word-matched";
+                    matchedCount++;
+                }
+            });
+
+            liveAccuracyPercent = Math.round((matchedCount / targetWords.length) * 100);
+            document.getElementById('live-accuracy').innerText = `%${liveAccuracyPercent}`;
+
+            if (liveAccuracyPercent >= 100) {
+                finishPerformance();
+            }
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                elapsedTime = (Date.now() - startTime) / 1000;
+                document.getElementById('live-timer').innerText = elapsedTime.toFixed(1) + 's';
+            }, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function resetPerformance() {
+            if (isRecording) {
+                isRecording = false;
+                try { recognition.stop(); } catch(e){}
+            }
+            stopTimer();
+            elapsedTime = 0;
+            liveAccuracyPercent = 0;
+            document.getElementById('live-timer').innerText = "00:00";
+            document.getElementById('live-accuracy').innerText = "%0";
+            document.getElementById('karaoke-transcription').innerText = "Konuşmaya başladığınızda söyledikleriniz canlı olarak burada belirecektir...";
+            document.getElementById('btn-finish-test').disabled = true;
+            document.getElementById('results-card').classList.add('hidden');
+            renderKaraokeTargetText();
+            updateMicUI();
+        }
+
+        /* ==========================================================================
+           SCORING & TRAINER OVERRIDE LOGIC
+           ========================================================================== */
+        function finishPerformance() {
+            if (isRecording) {
+                isRecording = false;
+                try { recognition.stop(); } catch(e){}
+            }
+            stopTimer();
+
+            AudioFX.playSuccess();
+            recalculateScore();
+
+            const resCard = document.getElementById('results-card');
+            resCard.classList.remove('hidden');
+            resCard.scrollIntoView({ behavior: 'smooth' });
+
+            if (liveAccuracyPercent >= 75 && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function recalculateScore() {
+            const timeTaken = elapsedTime || 6.0;
+            const articulationStar = parseInt(document.getElementById('trainer-articulation').value);
+            const breathStar = parseInt(document.getElementById('trainer-breath').value);
+
+            // Calculation algorithm: Accuracy (40%) + Trainer Rating (40%) + Time Bonus (20%)
+            let accuracyPoints = liveAccuracyPercent * 4; // max 400
+            let trainerPoints = (articulationStar + breathStar) * 40; // max 400
+            let timeBonus = Math.max(0, Math.round((currentTwister.targetTime - timeTaken) * 25)); // max 200
+            
+            let totalScore = accuracyPoints + trainerPoints + timeBonus;
+
+            // Rating Stars
+            let starsHtml = '';
+            let badgeTitle = 'Dil Bükücü Master';
+
+            if (totalScore >= 880) {
+                starsHtml = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>';
+                badgeTitle = 'Dil Bükücü Master';
+            } else if (totalScore >= 720) {
+                starsHtml = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-slate-600"></i>';
+                badgeTitle = 'Alevli Telaffuz';
+            } else if (totalScore >= 550) {
+                starsHtml = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-slate-600"></i><i class="fa-regular fa-star text-slate-600"></i>';
+                badgeTitle = 'Işık Hızı MT';
+            } else {
+                starsHtml = '<i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-slate-600"></i><i class="fa-regular fa-star text-slate-600"></i><i class="fa-regular fa-star text-slate-600"></i>';
+                badgeTitle = 'Gelişmekte Olan Temsilci';
+            }
+
+            document.getElementById('res-accuracy').innerText = `%${liveAccuracyPercent}`;
+            document.getElementById('res-time').innerText = `${timeTaken.toFixed(1)}s`;
+            document.getElementById('res-score').innerText = totalScore;
+            document.getElementById('res-badge-title').innerText = badgeTitle;
+            document.getElementById('result-stars').innerHTML = starsHtml;
+        }
+
+        /* ==========================================================================
+           LEADERBOARD & MODALS
+           ========================================================================== */
+        function saveScore() {
+            const nameInput = document.getElementById('representative-name');
+            const name = nameInput.value.trim();
+
+            if (!name) {
+                alert("Lütfen temsilci adını giriniz.");
+                return;
+            }
+
+            const score = parseInt(document.getElementById('res-score').innerText);
+            const accuracy = parseInt(document.getElementById('res-accuracy').innerText.replace('%',''));
+            const badge = document.getElementById('res-badge-title').innerText;
+
+            leaderboardData.push({ name, score, accuracy, badge });
+            leaderboardData.sort((a, b) => b.score - a.score);
+
+            localStorage.setItem('mt_diksiyon_leaderboard_v2', JSON.stringify(leaderboardData));
+            
+            renderLeaderboard();
+            nameInput.value = '';
+            alert("Müşteri Temsilcisi skoru başarıyla kaydedildi!");
+            document.getElementById('modal-leaderboard').classList.remove('hidden');
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-rows');
+            container.innerHTML = leaderboardData.map((item, index) => `
+                <tr class="hover:bg-white/5 transition">
+                    <td class="py-3 font-bold text-amber-400">#${index + 1}</td>
+                    <td class="py-3 font-semibold text-white">${item.name}</td>
+                    <td class="py-3 font-mono font-bold text-indigo-300">${item.score}</td>
+                    <td class="py-3 font-mono text-emerald-400">%${item.accuracy}</td>
+                    <td class="py-3">
+                        <span class="px-2 py-1 rounded bg-indigo-500/20 text-indigo-300 text-xs border border-indigo-500/30">
+                            ${item.badge}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populateAllTwistersGrid() {
+            const container = document.getElementById('twister-grid-container');
+            container.innerHTML = twisterDatabase.map(t => `
+                <div class="glass-card p-5 rounded-2xl border border-white/10 hover:border-pink-500/50 transition flex flex-col justify-between gap-3 shadow-lg">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-display font-bold text-cyan-300 text-sm">#${t.id < 10 ? '0' + t.id : t.id} - ${t.title}</span>
+                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-950 text-rose-200 border border-rose-500/40">${t.difficulty}</span>
+                        </div>
+                        <p class="text-xs text-slate-100 font-medium leading-relaxed mb-2 border-l-2 border-pink-500 pl-2">
+                            "${t.text}"
+                        </p>
+                    </div>
+                    <button onclick="selectAndCloseModal(${t.id})" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-bold transition shadow-md">
+                        Bu Tekerlemeyi Çalış
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function selectAndCloseModal(id) {
+            const selected = twisterDatabase.find(t => t.id === id);
+            if (selected) {
+                selectTwister(selected);
+                document.getElementById('modal-twister-list').classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
